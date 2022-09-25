@@ -1,33 +1,17 @@
-#import Pkg
-#Pkg.add("DataStructures")
-#Pkg.add("Shuffle")
-#Pkg.add("Plots")
-#Pkg.build("DataStructures")
-#Pkg.build("Shuffle")
-#Pkg.build("Plots")
+import DataStructures
+import Shuffle
+import Plots
+
 using DataStructures
 using Shuffle
 using Plots
+using Random
+using Distributions
 
-function generate_configs(n, stor::Stack, arr::Vector, i)
-
-  if i == n+1
-    if arr ∉ stor
-      final_arr = zeros(length(arr))
-      for i=1:length(arr)
-        final_arr[i] = arr[i]
-      end
-      stor = push!(stor, final_arr)
-    end
-    arr = ones(n)
-    return
-  end
-
-  arr[i] = 1
-  generate_configs(n, stor, arr, i+1)
-
-  arr[i] = -1
-  generate_configs(n, stor, arr, i+1)
+function generator(N)
+  basis = [[1, -1] for i in 1:N]
+  set = collect(Iterators.product(basis...))
+  return vec(set)
 end
 
 
@@ -47,16 +31,8 @@ function get_energy(s, h, J)
 end
 
 function random_field(N)
-  if N%2 != 0
-    println("N must be even!")
-  else
-    h = ones(N)
-    for i=1:Int(N/2)
-      h[i] = -1
-    end
-    shuffle!(h)
-  end
-  return h
+  nd = Normal(0, 1)
+  return rand(nd, N)
 end
 
 
@@ -79,28 +55,24 @@ function get_groundstate(stor, h, J)
   return gs_data
 end
 
-
 function exhaustive_ising(N)
-  config_space = Stack{Vector{}}()
-  empty_config = ones(N)
-  generate_configs(N, config_space, empty_config, 1)
+  config_space = generator(N)
   #print(config_space)
   h = random_field(N)
   println("h is ", h)
+  J = 0.01
 
-  #Set J = 0.01
-  gs = get_groundstate(config_space, h, 0.01)
+  @time gs = get_groundstate(config_space, h, J)
   println()
   println("Ground state energy = ", gs[2])
   println("The ground state is ", gs[1])
   energies = gs[3]
   #print("energies are: ", energies)
-  plot(1:4, energies)
+  plot(1:2^N, energies)
 end
 
 #This line executes the program:
-exhaustive_ising(2)
-
+exhaustive_ising(20)
 
 
 #Plot E vs configuration for all configurations
