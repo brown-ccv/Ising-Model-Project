@@ -89,7 +89,7 @@ function mcm_mag(config_initial::AbstractArray, kT, J, h, steps)
     dE = E_new - E
     #look at the difference between old and new hamiltonian
     prob = exp(-dE/(kT))
-    #in lieu of the MCMC algorithm, have a probability equation
+    #as a MCMC algorithm, has an acceptance probability
     r = rand(Float64)
     #as well as a randomized r from 0 to 1
       if min(1, prob) > r
