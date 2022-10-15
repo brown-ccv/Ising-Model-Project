@@ -179,3 +179,4 @@ println("mag", mags_list[2])
 for i=1:runs
   display(plot!(1:states_list[i], susceptibility_list[i], label = "Run " * string(i)))
 end
+#
