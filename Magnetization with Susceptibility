@@ -98,7 +98,7 @@ function mcm_mag(config_initial::AbstractArray, kT, J, h, steps)
     dE = E_new - E
     #look at the difference between old and new hamiltonian
     prob = exp(-dE/(kT))
-    #in lieu of the MCMC algorithm, have a probability equation
+    #acceptance ratio equation
     r = rand(Float64)
     #as well as a randomized r from 0 to 1
       if min(1, prob) > r
@@ -123,8 +123,8 @@ function mcm_mag(config_initial::AbstractArray, kT, J, h, steps)
       end
     end
     return states, mags, X
-    #at the end of the runs, we return an array of updated magnization
-    #per spin (and runs), as well as the number of states (and runs)
+    #at the end of the steps, we return an array of updated magnization
+    #per spin, as well as the number of states 
   end
 
 
