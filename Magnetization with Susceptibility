@@ -122,7 +122,7 @@ J = 1.0 #make 1 -- Jonah
 h = zeros(N)
 #initialized random field
 steps =99
-#arbitary number of states used for MCMC
+#arbitary number of steps used for MCMC
 runs = 1
 #initializes number of runs, similar to Random walk for comparison 
 
