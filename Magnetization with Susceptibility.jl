@@ -98,7 +98,7 @@ function mcm_mag(config_initial::AbstractArray, kT, J, h, steps)
     dE = E_new - E
     #look at the difference between old and new hamiltonian
     prob = exp(-dE/(kT))
-    #acceptance ratio equation
+    #in lieu of the MCMC algorithm, have a probability equation
     r = rand(Float64)
     #as well as a randomized r from 0 to 1
       if min(1, prob) > r
@@ -110,25 +110,25 @@ function mcm_mag(config_initial::AbstractArray, kT, J, h, steps)
         states += 1
         #clarifying that we are now in a new state
         m_1 = m
-        m_2 = m*m
-        x = m_2-m_1
+        m_2 = m*m*N
+        x = (1/kT)*(m_2-m_1)
         push!(X,x)
         #push suscepibility of a state into the array
         push!(mags, m)
         #the updated magnization "m" is "pushed" into the mags array
-        
+
       else
         config[site] = -1*config[site]
         #if false, then configuration stays the same
       end
     end
     return states, mags, X
-    #at the end of the steps, we return an array of updated magnization
-    #per spin, as well as the number of states 
+    #at the end of the runs, we return an array of updated magnization
+    #per spin (and runs), as well as the number of states (and runs)
   end
 
 
-N = 4
+N = 1000
 #number of spins in initialized configuration
 kT = 5.0
 #1/β
@@ -136,9 +136,9 @@ J = 1.0 #make 1 -- Jonah
 #our J constant for the ising model hamiltonian
 h = zeros(N)
 #initialized random field
-steps =99
+steps = 500
 #arbitary number of states used for MCMC
-runs = 2
+runs = 3
 #initializes number of runs, similar to Random walk for comparison
 
 config0 = initial_config(N)
@@ -169,7 +169,7 @@ end
 #println("states visited: ", states_list)
 #println("magnetization of final state: ", last(mags_list))
 
-plot()
+plot(xlabel = "Accepted States", ylabel = "Susceptibility")
 #for i=1:runs
 #  display(plot!(1:states_list[i], mags_list[i], label = "Run " * string(i)))
 #end
@@ -179,4 +179,3 @@ println("mag", mags_list[2])
 for i=1:runs
   display(plot!(1:states_list[i], susceptibility_list[i], label = "Run " * string(i)))
 end
-#
