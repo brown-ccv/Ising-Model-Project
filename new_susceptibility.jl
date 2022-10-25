@@ -125,7 +125,7 @@ function mcm_mag(config_initial::AbstractArray, kT, J, h, steps)
 
 N = 1000
 #number of spins in initialized configuration
-initkT = 5.0
+initkT = 0.0
 #1/β
 J = 1.0 #make 1 -- Jonah
 #our J constant for the ising model hamiltonian
@@ -135,7 +135,7 @@ h = ones(N)*(0.01)
 #then take the difference
 
 #initialized random field
-steps = 10000
+steps = 100000
 #arbitary number of states used for MCMC
 runs = 10
 #initializes number of runs, similar to Random walk for comparison
@@ -144,14 +144,58 @@ config0 = initial_config(N)
 X_list = Vector{Float64}()
 #initialized suscepibility array per run
 
-m_factor = 0.5
-iter = 5.0
-finalkT = 50.0
+m_factor = 1.0
+iter = 0.2
+finalkT = 10.0
 
+function last10(vec)
+  x = 0
+  if length(vec) <= 10
+    print("data not long enough")
+  else
+    for i=length(vec)-9:length(vec)
+      x += vec[i]
+    end
+  end
+  avgx = x/10
+  return avgx
+end
+
+function minlength(vecvec)
+  x = Inf
+  for i=1:length(vecvec)
+    size = length(vecvec[i])
+    x = min(x, size)
+  end
+  return Int(x)
+end
+
+function avgruns(vecvec)
+  m = minlength(vecvec)
+  v = zeros(m)
+  for i=1:m
+    x = 0
+    for j=1:runs
+      x += vecvec[j][i]
+      v[i] = x/runs
+    end
+  end
+  return v
+end
+
+h_vals = [0.5, 1.0, 2.0]
+
+ms1 = Vector{Float64}()
+ms2 = Vector{Float64}()
+ms3 = Vector{Float64}()
 for kT = initkT:iter:finalkT
   avgms = Vector{Float64}()
-  for j = 1:2
-    h = j*ones(N)*m_factor
+  mags_copy1 = Vector{Vector{Float64}}()
+  mags_copy2 = Vector{Vector{Float64}}()
+  mags_copy3 = Vector{Vector{Float64}}()
+  for j = 1:3
+    #h = j*ones(N)*m_factor
+    h = ones(N)*h_vals[j]
     mags_list = Vector{Vector{Float64}}()
     #initialized magnization per spin vector per run
     states_list = Vector{Int64}()
@@ -167,12 +211,35 @@ for kT = initkT:iter:finalkT
       #using push! takes into account the number of runs, i.e., a new run "pushes"
       #a new array of magnization into this new variable
     end
-    final_mags = map((x)->last(x), mags_list)
-    avg_mag = sum(final_mags)/runs
-    push!(avgms, avg_mag)
+    if j==1
+      mags_copy1 = mags_list
+    elseif j==2
+      mags_copy2 = mags_list
+    else
+      mags_copy3 = mags_list
+    end
   end
-  X = (avgms[2]-avgms[1])/m_factor
-  push!(X_list, X)
+  #bound = min(minlength(mags_copy1), minlength(mags_copy2))
+  #println("bound: ", bound)
+  #final_mags1 = map((x)->last10(x, bound), mags_copy1)
+  #final_mags2 = map((x)->last10(x, bound), mags_copy2)
+  mags1 = map((x)->last10(x), mags_copy1)
+  mags2 = map((x)->last10(x), mags_copy2)
+  mags3 = map((x)->last10(x), mags_copy3)
+  avg_mag1 = sum(mags1)/runs
+  push!(ms1, 1/(avg_mag1/h_vals[1]))
+  avg_mag2 = sum(mags2)/runs
+  push!(ms1, 1/(avg_mag2/h_vals[2]))
+  avg_mag3 = sum(mags3)/runs
+  push!(ms1, 1/(avg_mag3/h_vals[3]))
+  #mag1 = avgruns(mags_copy1)
+  #mag2 = avgruns(mags_copy2)
+  #X = (avg_mag2-avg_mag1)/m_factor
+  #push!(X_list, X)
 end
 
-plot(initkT:iter:finalkT, X_list, xlabel = "Temperature", ylabel = "Susceptibility")
+plot(initkT:iter:finalkT, ms1, xlabel = "Temperature", ylabel = "Average Magnetization", linecolor = :blue)
+plot!(initkT:iter:finalkT, ms2, linecolor = :red)
+plot!(initkT:iter:finalkT, ms3, linecolor = :green)
+
+#plot(initkT:iter:finalkT, X_list, xlabel = "Temperature", ylabel = "Susceptibility")
