@@ -35,14 +35,14 @@ function get_energy(s::AbstractArray, h::AbstractArray, J)
   E1 = 0.0
   E2 = 0.0
   for i=1:length(s)
-    if i != length(s)
-      E0 += J*s[i]*s[i+1]
-    end
-    #for j=i:length(s)
-      #if j != i
-        #E1 += J*(s[i]-s[j])^2/(i-j)^2
-      #end
+    #if i != length(s)
+      #E0 += J*s[i]*s[i+1]
     #end
+    for j=i:length(s)
+      if j != i
+        E1 += J*(s[i]-s[j])^2/(i-j)^2
+      end
+    end
     E2 += h[i]*s[i]
   end
   E = E0-E2
@@ -123,7 +123,7 @@ function mcm_mag(config_initial::AbstractArray, kT, J, h, steps)
   end
 
 
-N = 1000
+N = 250
 #number of spins in initialized configuration
 initkT = 0.0
 #1/β
@@ -187,15 +187,14 @@ h_vals = [0.5, 1.0, 2.0]
 
 ms1 = Vector{Float64}()
 ms2 = Vector{Float64}()
-ms3 = Vector{Float64}()
 for kT = initkT:iter:finalkT
   avgms = Vector{Float64}()
   mags_copy1 = Vector{Vector{Float64}}()
   mags_copy2 = Vector{Vector{Float64}}()
-  mags_copy3 = Vector{Vector{Float64}}()
-  for j = 1:3
+  #mags_copy3 = Vector{Vector{Float64}}()
+  for j = 1:2
     #h = j*ones(N)*m_factor
-    h = ones(N)*h_vals[j]
+    h = ones(N)*h_vals[j+1]
     mags_list = Vector{Vector{Float64}}()
     #initialized magnization per spin vector per run
     states_list = Vector{Int64}()
@@ -215,8 +214,8 @@ for kT = initkT:iter:finalkT
       mags_copy1 = mags_list
     elseif j==2
       mags_copy2 = mags_list
-    else
-      mags_copy3 = mags_list
+    #else
+      #mags_copy3 = mags_list
     end
   end
   #bound = min(minlength(mags_copy1), minlength(mags_copy2))
@@ -225,21 +224,21 @@ for kT = initkT:iter:finalkT
   #final_mags2 = map((x)->last10(x, bound), mags_copy2)
   mags1 = map((x)->last10(x), mags_copy1)
   mags2 = map((x)->last10(x), mags_copy2)
-  mags3 = map((x)->last10(x), mags_copy3)
+  #mags3 = map((x)->last10(x), mags_copy3)
   avg_mag1 = sum(mags1)/runs
-  push!(ms1, 1/(avg_mag1/h_vals[1]))
+  #push!(ms1, 1/(avg_mag1/h_vals[1]))
   avg_mag2 = sum(mags2)/runs
-  push!(ms1, 1/(avg_mag2/h_vals[2]))
-  avg_mag3 = sum(mags3)/runs
-  push!(ms1, 1/(avg_mag3/h_vals[3]))
+  #push!(ms1, 1/(avg_mag2/h_vals[2]))
+  #avg_mag3 = sum(mags3)/runs
+  #push!(ms1, 1/(avg_mag3/h_vals[3]))
   #mag1 = avgruns(mags_copy1)
   #mag2 = avgruns(mags_copy2)
-  #X = (avg_mag2-avg_mag1)/m_factor
-  #push!(X_list, X)
+  X = (avg_mag2-avg_mag1)/m_factor
+  push!(X_list, 1/X)
 end
 
-plot(initkT:iter:finalkT, ms1, xlabel = "Temperature", ylabel = "Average Magnetization", linecolor = :blue)
-plot!(initkT:iter:finalkT, ms2, linecolor = :red)
-plot!(initkT:iter:finalkT, ms3, linecolor = :green)
+#plot(initkT:iter:finalkT, ms1, xlabel = "Temperature", ylabel = "Average Magnetization", linecolor = :blue)
+#plot!(initkT:iter:finalkT, ms2, linecolor = :red)
+#plot!(initkT:iter:finalkT, ms3, linecolor = :green)
 
-#plot(initkT:iter:finalkT, X_list, xlabel = "Temperature", ylabel = "Susceptibility")
+plot(initkT:iter:finalkT, X_list, xlabel = "Temperature", ylabel = "Susceptibility")
