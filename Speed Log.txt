@@ -1,4 +1,4 @@
-                  Unit        Gaussian
+4 GPUs           Unit        Gaussian
 16 cores, N=50, 35 seconds, 35 seconds  (took 49 seconds, 41 seconds respectively on my laptop)
 16 cores, N=100, 271.790490 seconds, 271.790490 seconds —(4.52 minutes)
 16 cores N=300, 6983.273645 seconds, 6983.273645 seconds —1 hours 54 minutes each
@@ -6,3 +6,9 @@
 
 
 I didn’t see much of a difference between the cores. Perhaps the GPUs would differ ---Abdulai
+
+2 GPUs
+8 cores, N=50, 40.03 seconds, 37.33 seconds
+12 cores, N=50,  38.3 seconds, 35.58
+
+Changing memory to a max 256GB makes no difference
