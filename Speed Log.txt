@@ -11,4 +11,4 @@ I didn’t see much of a difference between the cores. Perhaps the GPUs would di
 8 cores, N=50, 40.03 seconds, 37.33 seconds
 12 cores, N=50,  38.3 seconds, 35.58
 
-Changing memory to a max 256GB makes no difference.
+Changing memory to a max 256GB makes no difference
