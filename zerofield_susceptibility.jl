@@ -146,7 +146,7 @@ N = 1000
 J = 1.0
 
 #Initialize number of montecarlo steps
-mcsteps = 100000
+mcsteps = 10000000
 
 config0 = initial_config(N)
 
