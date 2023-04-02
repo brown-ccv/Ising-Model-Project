@@ -6,12 +6,13 @@ using Shuffle
 using Plots
 using Random
 using Distributions
+using .Threads
 
 
 #takes in an integer n
 #returns array of length n of integers +/- 1 (randomly chosen) that represent spins
 function initial_config(n::Int)
-  config = zeros(n)
+  config = zeros(Int64, n)
   if n%2 != 0
     println("Size n must be even.")
     return
@@ -32,7 +33,7 @@ function gaussian_rf(N)
 end
 
 function unit_rf(N, h)
-  field = zeros(N)
+  field = zeros(Float64, N)
   for i=1:N
     field[i] = rand([-h, h])
   end
@@ -42,11 +43,11 @@ end
 
 #standard function for getting the hamilitonian of 1/r^2
 #Ising Model
-function get_energy(s::AbstractArray, h::AbstractArray, J)
+function get_energy(s, h, J)
   E0 = 0.0
   E1 = 0.0
   E2 = 0.0
-  for i=1:length(s)
+  Threads.@threads for i=1:length(s)
     #if i != length(s)
       #E0 += J*s[i]*s[i+1]
     #else
@@ -54,12 +55,12 @@ function get_energy(s::AbstractArray, h::AbstractArray, J)
     #end
     for j=i:length(s)
       if j != i
-        E1 += J*(s[i]-s[j])^2/(i-j)^2
+        E1 += (s[i]-s[j])^2/(i-j)^2
       end
     end
     E2 += h[i]*s[i]
   end
-  E = -E1/2 - E2
+  E = -J*E1/2 - E2
   return E
 end
 
@@ -68,7 +69,7 @@ end
 #a configuration.
 #magnetization per spin = <M>/N, where
 #N is basically length of the configuration
-function get_magnetization(config::AbstractArray)
+function get_magnetization(config::Array{Int64})
   M = sum(config)
   return M
 end
@@ -140,20 +141,20 @@ end
 #CONSTANTS:
 
 #Number of spins in initialized configuration
-N = 1000
+const N = 1000
 
 #Interaction constant
-J = 1.0
+const J = 1.0
 
 #Initialize number of montecarlo steps
-mcsteps = 10000000
+const mcsteps = 10000000
 
 config0 = initial_config(N)
 
 #Initialize random field(s)
-h0 = zeros(N)
+h0 = zeros(Float64, N)
 
-initkT = 0.1
+initkT = 0.05
 iter = 0.05
 finalkT = 3.0
 
