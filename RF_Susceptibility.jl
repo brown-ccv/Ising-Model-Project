@@ -53,14 +53,12 @@ function get_energy(s, h, J)
     #else
       #E0 += J*s[i]*s[1]
     #end
-    for j=i:length(s)
-      if j != i
-        E1 += (s[i]-s[j])^2/(i-j)^2
-      end
+    for j=i+1:length(s)
+       E1 += (s[i]-s[j])^2/(i-j)^2
     end
     E2 += h[i]*s[i]
   end
-  E = -J*E1/2 - E2
+  E = -J*E1 - E2
   return E
 end
 
