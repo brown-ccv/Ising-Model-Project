@@ -45,7 +45,7 @@ function get_energy(s, h, J)
   E0 = 0.0
   E1 = 0.0
   E2 = 0.0
-  Threads.@threads for i=1:length(s)
+  for i=1:length(s)
     #if i != length(s)
       #E0 += J*s[i]*s[i+1]
     #else
@@ -75,8 +75,9 @@ end
 #Calculate domain wall energy cost
 function dw_cost(config, h, J)
   s = copy(config)
+  E_gs = get_energy(s, h, J)    # "ground state" energy
   add_dw(s)
-  return get_energy(s, h, J)
+  return get_energy(s, h, J) - E_gs
 end
 
 #Calculate magnetization  (do I need?)
@@ -125,7 +126,7 @@ function metropolis(config_initial, h, kT, J, mcsteps)
   #initial state of the configuration before a MCMC update
   #E = get_energy(config, h, J)
   # hamiltonian of a particular configuration
-  for i=1:mcsteps
+  Threads.@threads for i=1:mcsteps
     #For MCMC an arbitrary number steps are executed for precision
     do_MC_Step(config, h, kT, J)
     #println("MC step ", i, " at ", kT, " kT.")
@@ -152,6 +153,7 @@ iter = 20
 final_size = 1000
 
 sizes = [10, 20, 50, 100, 200, 300, 400, 500, 750, 1000]
+steps = [10000, 10000, 100000, 100000, 500000, 500000, 1000000, 1000000, 2000000, 4000000]
 
 #how should I iterate through sizes?
 
@@ -159,7 +161,7 @@ DW_Energy_List = Vector{Float64}()
 for n in sizes
   config0 = initial_config(n)
   hg = gaussian_rf(n)
-  dw_energy = metropolis(config0, hg, kT, J, mcsteps)
+  dw_energy = metropolis(config0, hg, kT, J, popfirst!(steps))
   push!(DW_Energy_List, dw_energy)
   println("At size ", n)
 end
