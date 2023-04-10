@@ -45,7 +45,7 @@ function get_energy(s, h, J)
   E0 = 0.0
   E1 = 0.0
   E2 = 0.0
-  for i=1:length(s)
+  for i=1:length(s)-1
     #if i != length(s)
       #E0 += J*s[i]*s[i+1]
     #else
