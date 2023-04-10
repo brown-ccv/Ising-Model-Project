@@ -156,11 +156,11 @@ initkT = 0.05
 iter = 0.05
 finalkT = 3.0
 
-X_list1 = Vector{Float64}()
+X_list1 = Vector{Float64}() # why not initialize the exact number of elements here?
 for kT = initkT:iter:finalkT
   data = metropolis(config0, kT, J, h0, mcsteps)
   X = get_susceptibility(data[1], data[2], kT, length(config0))
-  push!(X_list1, X)
+  push!(X_list1, X) # then update in place without growing the array
   println("At ", kT, " kT.")
 end
 plot(initkT:iter:finalkT, X_list1, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "h = 0")
