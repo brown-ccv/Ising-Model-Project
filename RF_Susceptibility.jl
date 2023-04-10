@@ -73,8 +73,7 @@ function get_magnetization(config::AbstractArray)
 end
 
 function get_susceptibility(M_list, Msq_list, kT, N)
-  avg_M = 0
-  #avg_M = sum(M_list)/mcsteps
+  avg_M = sum(M_list)/mcsteps
   avg_Msq = sum(Msq_list)/mcsteps
   X = (1/kT)*(avg_Msq - avg_M^2)/N
   return X
@@ -149,7 +148,7 @@ const mcsteps = 10000000
 
 config0 = initial_config(N)
 
-#Initialize random field(s)
+#Initialize random field(s):
 #h0 = zeros(N)
 #h1 = unit_rf(N, 1.2)
 #h2u = unit_rf(N, 0.1)
@@ -160,7 +159,7 @@ h3g = gaussian_rf(N)
 
 initkT = 0.05
 iter = 0.05
-finalkT = 2.0
+finalkT = 2.2
 
 #Unit Random Field:
 X_list1 = Vector{Float64}()
@@ -170,8 +169,7 @@ for kT = initkT:iter:finalkT
   push!(X_list1, X)
   println("At ", kT, " kT.")
 end
-plot(initkT:iter:finalkT, X_list1, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "Gaussian 1")
-
+plot(initkT:iter:finalkT, X_list1, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "Gaussian RF 1")
 
 #Gaussian Random Field:
 X_list2 = Vector{Float64}()
@@ -181,7 +179,7 @@ for kT = initkT:iter:finalkT
   push!(X_list2, X)
   println("At ", kT, " kT.")
 end
-plot!(initkT:iter:finalkT, X_list2, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "Gaussian 2")
+plot!(initkT:iter:finalkT, X_list2, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "Gaussian RF 2")
 
 X_list3 = Vector{Float64}()
 for kT = initkT:iter:finalkT
@@ -190,4 +188,4 @@ for kT = initkT:iter:finalkT
   push!(X_list3, X)
   println("At ", kT, " kT.")
 end
-plot!(initkT:iter:finalkT, X_list3, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "Gaussian 3")
+plot!(initkT:iter:finalkT, X_list3, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "Gaussian RF 3")
