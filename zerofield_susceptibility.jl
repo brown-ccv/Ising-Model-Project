@@ -13,15 +13,9 @@ using .Threads
 #returns array of length n of integers +/- 1 (randomly chosen) that represent spins
 function initial_config(n::Int)
   config = zeros(Int64, n)
-  if n%2 != 0
-    println("Size n must be even.")
-    return
-  else
-    for i=1:n
-      config[i] = rand([-1, 1])
-    end
+  for i=1:n
+     config[i] = rand([-1, 1])
   end
-  #print(config)
   return config
   #essentially from N, we get a randomized array of spin ups and downs
   #e.g., N=2 may equal [1,-1]; N=4 may equal [1,-1,-1,1] as our initial configuration
@@ -33,7 +27,7 @@ function gaussian_rf(N)
 end
 
 function unit_rf(N, h)
-  field = zeros(Float64, N)
+  field = zeros(Float32, N)
   for i=1:N
     field[i] = rand([-h, h])
   end
@@ -58,7 +52,7 @@ function get_energy(s, h, J)
     end
     E2 += h[i]*s[i]
   end
-  E = -J*E1 - E2
+  E = -J*E1/2 - E2
   return E
 end
 
@@ -107,7 +101,6 @@ function do_MC_Step(config, kT, J, h, M_list, Msq_list)
   end
   M = get_magnetization(config)
   M_sq = M^2
-  #println("M squared: ", M_sq)
   #push!(M_list, abs(M))
   push!(Msq_list, M_sq)
   #we get the magnization per spin of the updated system
@@ -150,7 +143,7 @@ const mcsteps = 10000000
 config0 = initial_config(N)
 
 #Initialize random field(s)
-h0 = zeros(Float64, N)
+h0 = zeros(Float32, N)
 
 initkT = 0.05
 iter = 0.05
