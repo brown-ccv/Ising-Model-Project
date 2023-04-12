@@ -45,7 +45,7 @@ function get_energy(s, h, J)
   E0 = 0.0
   E1 = 0.0
   E2 = 0.0
-  Threads.@threads for i=1:length(s)-1
+  for i=1:length(s)-1
     #if i != length(s)
       #E0 += J*s[i]*s[i+1]
     #else
@@ -56,7 +56,7 @@ function get_energy(s, h, J)
     end
     E2 += h[i]*s[i]
   end
-  E = -J*E1 - E2
+  E = J/2*E1 - E2
   return E
 end
 
@@ -155,16 +155,13 @@ final_size = 1000
 sizes = [10, 20, 50, 100, 200, 300, 400, 500, 750, 1000]
 steps = [10000, 10000, 100000, 100000, 500000, 500000, 1000000, 1000000, 2000000, 4000000]
 
-sizes1 = [10, 20, 30]
-steps1 = [10000, 10000, 10000]
-
 #how should I iterate through sizes?
 
 DW_Energy_List = Vector{Float64}()
-for n in sizes1
+for n in sizes
   config0 = initial_config(n)
   hg = gaussian_rf(n)
-  dw_energy = metropolis(config0, hg, kT, J, popfirst!(steps1))
+  dw_energy = metropolis(config0, hg, kT, J, popfirst!(steps))
   push!(DW_Energy_List, dw_energy)
   println("At size ", n)
 end
