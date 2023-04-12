@@ -13,15 +13,9 @@ using .Threads
 #returns array of length n of integers +/- 1 (randomly chosen) that represent spins
 function initial_config(n::Int)
   config = zeros(Int64, n)
-  if n%2 != 0
-    println("Size n must be even.")
-    return
-  else
-    for i=1:n
-      config[i] = rand([-1, 1])
-    end
+  for i=1:n
+    config[i] = rand([-1, 1])
   end
-  #print(config)
   return config
   #essentially from N, we get a randomized array of spin ups and downs
   #e.g., N=2 may equal [1,-1]; N=4 may equal [1,-1,-1,1] as our initial configuration
@@ -47,18 +41,13 @@ function get_energy(s, h, J)
   E0 = 0.0
   E1 = 0.0
   E2 = 0.0
-  Threads.@threads for i=1:length(s)
-    #if i != length(s)
-      #E0 += J*s[i]*s[i+1]
-    #else
-      #E0 += J*s[i]*s[1]
-    #end
+  for i=1:length(s)-1
     for j=i+1:length(s)
-       E1 += (s[i]-s[j])^2/(i-j)^2
+      E1 += (s[i]-s[j])^2/(i-j)^2
     end
     E2 += h[i]*s[i]
   end
-  E = -J*E1 - E2
+  E = J*E1/2 - E2
   return E
 end
 
@@ -80,7 +69,6 @@ function get_susceptibility(M_list, Msq_list, kT, N)
 end
 
 function do_MC_Step(config, kT, J, h, M_list, Msq_list)
-  N = length(config)
   E = get_energy(config, h, J)
   for i=1:N
     site = rand(1:N)
@@ -107,7 +95,7 @@ function do_MC_Step(config, kT, J, h, M_list, Msq_list)
   M = get_magnetization(config)
   M_sq = M^2
   #println("M squared: ", M_sq)
-  #push!(M_list, abs(M))
+  push!(M_list, M)
   push!(Msq_list, M_sq)
   #we get the magnization per spin of the updated system
 end
@@ -148,7 +136,7 @@ const mcsteps = 10000000
 
 config0 = initial_config(N)
 
-#Initialize random field(s):
+#Initialize random field(s)
 #h0 = zeros(N)
 #h1 = unit_rf(N, 1.2)
 #h2u = unit_rf(N, 0.1)
@@ -159,9 +147,9 @@ h3g = gaussian_rf(N)
 
 initkT = 0.05
 iter = 0.05
-finalkT = 2.2
+finalkT = 2.0
 
-#Unit Random Field:
+#Gaussian Random Field:
 X_list1 = Vector{Float64}()
 for kT = initkT:iter:finalkT
   data = metropolis(config0, kT, J, h1g, mcsteps)
@@ -169,7 +157,7 @@ for kT = initkT:iter:finalkT
   push!(X_list1, X)
   println("At ", kT, " kT.")
 end
-plot(initkT:iter:finalkT, X_list1, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "Gaussian RF 1")
+plot(initkT:iter:finalkT, X_list1, xlabel = "Temperature (kT)", ylabel = "Magnetic Susceptibility", linewidth = 2.5, label = "Gaussian 1")
 
 #Gaussian Random Field:
 X_list2 = Vector{Float64}()
@@ -179,8 +167,9 @@ for kT = initkT:iter:finalkT
   push!(X_list2, X)
   println("At ", kT, " kT.")
 end
-plot!(initkT:iter:finalkT, X_list2, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "Gaussian RF 2")
+plot!(initkT:iter:finalkT, X_list2, xlabel = "Temperature (kT)", ylabel = "Magnetic Susceptibility", linewidth = 2.5, label = "Gaussian 2")
 
+#Gaussian Random Field:
 X_list3 = Vector{Float64}()
 for kT = initkT:iter:finalkT
   data = metropolis(config0, kT, J, h3g, mcsteps)
@@ -188,4 +177,4 @@ for kT = initkT:iter:finalkT
   push!(X_list3, X)
   println("At ", kT, " kT.")
 end
-plot!(initkT:iter:finalkT, X_list3, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "Gaussian RF 3")
+plot!(initkT:iter:finalkT, X_list3, xlabel = "Temperature (kT)", ylabel = "Magnetic Susceptibility", linewidth = 2.5, label = "Gaussian 3")
