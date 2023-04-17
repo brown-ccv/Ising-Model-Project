@@ -12,11 +12,7 @@ using .Threads
 #takes in an integer n
 #returns array of length n of integers +/- 1 (randomly chosen) that represent spins
 function initial_config(n::Int)
-  config = zeros(Int64, n)
-  for i=1:n
-     config[i] = rand([-1, 1])
-  end
-  return config
+  return rand([-1, 1], n)
   #essentially from N, we get a randomized array of spin ups and downs
   #e.g., N=2 may equal [1,-1]; N=4 may equal [1,-1,-1,1] as our initial configuration
 end
@@ -27,7 +23,7 @@ function gaussian_rf(N)
 end
 
 function unit_rf(N, h)
-  field = zeros(Float32, N)
+  field = zeros(Float64, N)
   for i=1:N
     field[i] = rand([-h, h])
   end
@@ -38,44 +34,36 @@ end
 #standard function for getting the hamilitonian of 1/r^2
 #Ising Model
 function get_energy(s, h, J)
-  E0 = 0.0
   E1 = 0.0
   E2 = 0.0
-  Threads.@threads for i=1:length(s)
-    #if i != length(s)
-      #E0 += J*s[i]*s[i+1]
-    #else
-      #E0 += J*s[i]*s[1]
-    #end
+  for i=1:length(s)-1
     for j=i+1:length(s)
-        E1 += (s[i]-s[j])^2/(i-j)^2
+      E1 += (s[i]-s[j])^2/(i-j)^2
     end
-    E2 += h[i]*s[i]
+    #E2 += h[i]*s[i]
   end
-  E = -J*E1/2 - E2
+  E = J*E1/2 - E2
   return E
 end
 
 
 #magnization equals the summation of spins in
 #a configuration.
-#magnetization per spin = <M>/N, where
-#N is basically length of the configuration
-function get_magnetization(config::Array{Int64})
+#magnetization per spin = M/N, where
+#N is length of the configuration
+function get_magnetization(config)
   M = sum(config)
   return M
 end
 
-function get_susceptibility(M_list, Msq_list, kT, N)
-  avg_M = 0
-  #avg_M = sum(M_list)/mcsteps
-  avg_Msq = sum(Msq_list)/mcsteps
+function get_susceptibility(M_acc, Msq_acc, kT, N)
+  avg_M = M_acc/mcsteps
+  avg_Msq = Msq_acc/mcsteps
   X = (1/kT)*(avg_Msq - avg_M^2)/N
   return X
 end
 
-function do_MC_Step(config, kT, J, h, M_list, Msq_list)
-  N = length(config)
+function do_MC_Step(config, kT, J, h, M_acc, Msq_acc)
   E = get_energy(config, h, J)
   for i=1:N
     site = rand(1:N)
@@ -100,46 +88,49 @@ function do_MC_Step(config, kT, J, h, M_list, Msq_list)
     end
   end
   M = get_magnetization(config)
-  M_sq = M^2
-  #push!(M_list, abs(M))
-  push!(Msq_list, M_sq)
-  #we get the magnization per spin of the updated system
+  return M
+  #M_acc += abs(M)
+  #Msq_acc += M^2
+  #return M_list, Msq_list
 end
 
 
 function metropolis(config_initial::AbstractArray, kT, J, h, mcsteps)
   config = copy(config_initial)
   #starts out with a configuration of randomized N spin array
-  mags = Vector{Float64}()
-  square_mags = Vector{Float64}()
-  M = get_magnetization(config)
-  push!(mags, M)
-  push!(square_mags, M^2)
+  #M = get_magnetization(config)
+  mag_acc = 0
+  sq_mag_acc = 0
 
-  accepted_states = 0
+  #accepted_states = 0
   #initial state of the configuration before a MCMC update
   E = get_energy(config, h, J)
   # hamiltonian of a particular configuration
   for i=1:mcsteps
     #For MCMC an arbitrary number steps are executed for precision
-    do_MC_Step(config, kT, J, h, mags, square_mags)
-    #println("MC step ", i, " at ", kT, " kT.")
+    m = do_MC_Step(config, kT, J, h, mag_acc, sq_mag_acc)
+    mag_acc += abs(m)
+    sq_mag_acc += m^2
   end
-  return mags, square_mags
+  return mag_acc, sq_mag_acc
 end
 
 
 #CONSTANTS:
 
 #Number of spins in initialized configuration
-const N = 1000
+N = 50
 
 #Interaction constant
-const J = 1.0
+J = 1.0
 
 #Initialize number of montecarlo steps
-const mcsteps = 10000000
+mcsteps = 1000000
 
+
+#RUN SIMULATION:
+
+#Initialize configuration
 config0 = initial_config(N)
 
 #Initialize random field(s)
@@ -147,13 +138,13 @@ h0 = zeros(Float32, N)
 
 initkT = 0.05
 iter = 0.05
-finalkT = 3.0
+finalkT = 2.5
 
 X_list1 = Vector{Float64}()
 for kT = initkT:iter:finalkT
-  data = metropolis(config0, kT, J, h0, mcsteps)
-  X = get_susceptibility(data[1], data[2], kT, length(config0))
+  mag, mag_sq = metropolis(config0, kT, J, h0, mcsteps)
+  X = get_susceptibility(mag, mag_sq, kT, N)
   push!(X_list1, X)
   println("At ", kT, " kT.")
 end
-plot(initkT:iter:finalkT, X_list1, xlabel = "Temperature", ylabel = "Susceptibility", linewidth = 2.5, label = "h = 0")
+plot(initkT:iter:finalkT, X_list1, xlabel = "Temperature (kT)", ylabel = "Magnetic Susceptibility", linewidth = 2.5, label = "h = 0")
