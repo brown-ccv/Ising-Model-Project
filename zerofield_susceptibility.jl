@@ -11,33 +11,27 @@ using .Threads
 
 #takes in an integer n
 #returns array of length n of integers +/- 1 (randomly chosen) that represent spins
-function initial_config(n::Int)
-  return rand([-1, 1], n)
+function random_unit_config(n::Int, h, seed)
+  Random.seed!(seed)
+  return rand([-h, h], n)
   #essentially from N, we get a randomized array of spin ups and downs
   #e.g., N=2 may equal [1,-1]; N=4 may equal [1,-1,-1,1] as our initial configuration
 end
 
-function gaussian_rf(N)
+function gaussian_rf(N, seed)
+  Random.seed!(seed)
   nd = Normal(0, 1)
   return rand(nd, N)
-end
-
-function unit_rf(N, h)
-  field = zeros(Float64, N)
-  for i=1:N
-    field[i] = rand([-h, h])
-  end
-  return field
 end
 
 
 #standard function for getting the hamilitonian of 1/r^2
 #Ising Model
-function get_energy(s, h, J)
+function get_energy(s, J, N)
   E1 = 0.0
   E2 = 0.0
-  for i=1:length(s)-1
-    for j=i+1:length(s)
+  for i=1:N-1
+    for j=i+1:N
       E1 += (s[i]-s[j])^2/(i-j)^2
     end
     #E2 += h[i]*s[i]
@@ -56,20 +50,20 @@ function get_magnetization(config)
   return M
 end
 
-function get_susceptibility(M_acc, Msq_acc, kT, N)
+function get_susceptibility(M_acc, Msq_acc, kT, N, mcsteps)
   avg_M = M_acc/mcsteps
   avg_Msq = Msq_acc/mcsteps
   X = (1/kT)*(avg_Msq - avg_M^2)/N
   return X
 end
 
-function do_MC_Step(config, kT, J, h, M_acc, Msq_acc)
-  E = get_energy(config, h, J)
+function do_MC_Step(config, kT, J, M_acc, Msq_acc, N)
+  E = get_energy(config, J, N)
   for i=1:N
     site = rand(1:N)
     config[site] = -1*config[site]
     #attempt to update one site of the configuration
-    E_new = get_energy(config, h, J)
+    E_new = get_energy(config, h, J, N)
     #look at the hamiltonian of the configuration
     #given this updated site
     dE = E_new - E
@@ -89,26 +83,22 @@ function do_MC_Step(config, kT, J, h, M_acc, Msq_acc)
   end
   M = get_magnetization(config)
   return M
-  #M_acc += abs(M)
-  #Msq_acc += M^2
-  #return M_list, Msq_list
 end
 
 
-function metropolis(config_initial::AbstractArray, kT, J, h, mcsteps)
+function metropolis(config_initial::AbstractArray, kT, J, mcsteps, N)
   config = copy(config_initial)
   #starts out with a configuration of randomized N spin array
   #M = get_magnetization(config)
-  mag_acc = 0
-  sq_mag_acc = 0
+  mag_acc = 0.0
+  sq_mag_acc = 0.0
 
   #accepted_states = 0
   #initial state of the configuration before a MCMC update
-  E = get_energy(config, h, J)
   # hamiltonian of a particular configuration
   for i=1:mcsteps
     #For MCMC an arbitrary number steps are executed for precision
-    m = do_MC_Step(config, kT, J, h, mag_acc, sq_mag_acc)
+    m = do_MC_Step(config, kT, J, mag_acc, sq_mag_acc, N)
     mag_acc += abs(m)
     sq_mag_acc += m^2
   end
@@ -119,22 +109,23 @@ end
 #CONSTANTS:
 
 #Number of spins in initialized configuration
-N = 50
+N = 20
 
 #Interaction constant
 J = 1.0
 
 #Initialize number of montecarlo steps
-mcsteps = 1000000
+mcsteps = 100000
+
+#random seed
+seed = rand(1:1000)
 
 
 #RUN SIMULATION:
 
 #Initialize configuration
-config0 = initial_config(N)
+config0 = random_unit_config(N, 1, seed)
 
-#Initialize random field(s)
-h0 = zeros(Float32, N)
 
 initkT = 0.05
 iter = 0.05
@@ -142,8 +133,8 @@ finalkT = 2.5
 
 X_list1 = Vector{Float64}()
 for kT = initkT:iter:finalkT
-  mag, mag_sq = metropolis(config0, kT, J, h0, mcsteps)
-  X = get_susceptibility(mag, mag_sq, kT, N)
+  mag, mag_sq = metropolis(config0, kT, J, mcsteps, N)
+  X = get_susceptibility(mag, mag_sq, kT, N, mcsteps)
   push!(X_list1, X)
   println("At ", kT, " kT.")
 end
