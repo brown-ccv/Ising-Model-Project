@@ -1,7 +1,6 @@
-using Plots
 using Random
-using Distributions
 using .Threads
+using Serialization
 
 
 #takes in an integer n
@@ -12,13 +11,6 @@ function random_unit_config(n::Int, h::Int, seed::Int)
   #essentially from N, we get a randomized array of spin ups and downs
   #e.g., N=2 may equal [1,-1]; N=4 may equal [1,-1,-1,1] as our initial configuration
 end
-
-function gaussian_rf(N::Int, seed::Int)
-  Random.seed!(seed)
-  nd = Normal(0, 1)
-  return rand(nd, N)
-end
-
 
 #standard function for getting the hamilitonian of 1/r^2
 #Ising Model
@@ -101,35 +93,26 @@ function metropolis(config_initial::Vector{Int64}, kT, J, mcsteps::Int, N)
 end
 
 
-  function execute!(X_list, initkT, iter, finalkT, config, J, N, mcsteps)
-      function f(kT, config0, J, mcsteps, N, i)
-          mag, mag_sq = metropolis(config0, kT, J, mcsteps, N)
-          X = get_susceptibility(mag, mag_sq, kT, N, mcsteps)
-          return (i, X)
-      end
-
-      tasks = [Threads.@spawn f(kT, config, J, mcsteps, N, i) for (i, kT) in enumerate(initkT:iter:finalkT)]
-
-      for (i, t) in enumerate(tasks)
-          i, X = fetch(t)
-          X_list[i] = X
-      end
-      return nothing
-  end
-
+function execute(kT, config, J, N, mcsteps)
+  mag, mag_sq = metropolis(config, kT, J, mcsteps, N)
+  X = get_susceptibility(mag, mag_sq, kT, N, mcsteps)
+  return X
+end
 
 function main()
+  kT = parse(Float64, first(ARGS))
+  println("kT: ", kT)
   #CONSTANTS:
   #Number of spins in initialized configuration
-  N = 50
-  println("N: $N")
+  N = 20
+  println("N: ", N)
 
   #Interaction constant
   J = 1.0
 
   #Initialize number of montecarlo steps
-  mcsteps = 1_000_000
-  println("MC steps: $mcsteps")
+  mcsteps = 10_000
+  println("Number of steps: ", mcsteps)
 
   #random seed
   seed = rand(1:1000)
@@ -138,17 +121,17 @@ function main()
   #Initialize configuration
   config0 = random_unit_config(N, 1, seed)
 
-  initkT = 0.05
-  iter = 0.05
-  finalkT = 2.5
-
-  num_runs = Int((finalkT - initkT) / iter + 1)
-
-
-  X_list1 = zeros(num_runs)
-  println(num_runs)
-  @time execute!(X_list1, initkT, iter, finalkT, config0, J, N, mcsteps)
-  plot(initkT:iter:finalkT, X_list1, xlabel="Temperature (kT)", ylabel="Magnetic Susceptibility", linewidth=2.5, label="h = 0")
+  @time  X = execute(kT, config0, J, N, mcsteps)
+  println(X)
+  #write X to a txt file
+  path = joinpath(@__DIR__, "data", "data-$N-$kT.txt")
+  println(path)
+  mkpath(dirname(path))
+  serialize(path, X)
+  #open(path, "w") do io
+  #  write(io, X)
+  #end
+  
 end
 
 

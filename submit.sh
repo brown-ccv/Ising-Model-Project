@@ -1,18 +1,20 @@
 #!/bin/bash
 
 # Request an hour of runtime:
-#SBATCH --time=01:20:00
+#SBATCH --time=30:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=48
+#SBATCH -c 1
 #SBATCH --partition=batch
-#SBATCH --mem=60G
+#SBATCH --mem=3G
 #SBATCH --job-name ising-sim 
-#SBATCH --output logs/ising-sim-%j.out
-#SBATCH --error logs/ising-sim-%j.out
+#SBATCH --output logs/ising-sim-%A-%a.out
+#SBATCH --error logs/ising-sim-%A-%a.out
 #SBATCH --constraint cascade
+#SBATCH --array=1-21
 
 module load julia/1.8.5
 
-julia --threads 48 --project=. src/zerofield_susceptibility.jl
+kT=`head -n $SLURM_ARRAY_TASK_ID temperatures.txt | tail -1`
+julia --threads $SLURM_CPUS_PER_TASK --project=. src/zerofield_susceptibility.jl $kT
 
 echo "Done!"
