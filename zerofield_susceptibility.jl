@@ -1,8 +1,3 @@
-import DataStructures
-import Shuffle
-import Plots
-using DataStructures
-using Shuffle
 using Plots
 using Random
 using Distributions
@@ -63,7 +58,7 @@ function do_MC_Step(config, kT, J, M_acc, Msq_acc, N)
     site = rand(1:N)
     config[site] = -1*config[site]
     #attempt to update one site of the configuration
-    E_new = get_energy(config, h, J, N)
+    E_new = get_energy(config, J, N)
     #look at the hamiltonian of the configuration
     #given this updated site
     dE = E_new - E
@@ -109,7 +104,7 @@ end
 #CONSTANTS:
 
 #Number of spins in initialized configuration
-N = 20
+N = 50
 
 #Interaction constant
 J = 1.0
@@ -131,11 +126,19 @@ initkT = 0.05
 iter = 0.05
 finalkT = 2.5
 
-X_list1 = Vector{Float64}()
-for kT = initkT:iter:finalkT
-  mag, mag_sq = metropolis(config0, kT, J, mcsteps, N)
-  X = get_susceptibility(mag, mag_sq, kT, N, mcsteps)
-  push!(X_list1, X)
-  println("At ", kT, " kT.")
+num_runs = Int((finalkT - initkT)/iter + 1)
+
+X_list1 = zeros(num_runs)
+function execute!(X_list, initkT, iter, finalkT, config, J, N, mcsteps)
+  i = 1
+  Threads.@threads for kT = initkT:iter:finalkT
+    mag, mag_sq = metropolis(config0, kT, J, mcsteps, N)
+    X = get_susceptibility(mag, mag_sq, kT, N, mcsteps)
+    X_list[i] = X
+    i += 1
+    println("At ", kT, " kT.")
+  end
+  return X_list
 end
+@time execute!(X_list1, initkT, iter, finalkT, config0, J, N, mcsteps)
 plot(initkT:iter:finalkT, X_list1, xlabel = "Temperature (kT)", ylabel = "Magnetic Susceptibility", linewidth = 2.5, label = "h = 0")
