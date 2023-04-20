@@ -101,15 +101,21 @@ function metropolis(config_initial::Vector{Int64}, kT, J, mcsteps::Int, N)
 end
 
 
-function execute!(X_list::Vector{Float64}, initkT::Float64, iter::Float64, finalkT::Float64, config::Vector{Int}, J::Float64, N::Int, mcsteps::Int)
-  i = 1
-  Threads.@threads for kT = initkT:iter:finalkT
-    mag, mag_sq = metropolis(config, kT, J, mcsteps, N)
-    X = get_susceptibility(mag, mag_sq, kT, N, mcsteps)
-    X_list[i] = X
-    i += 1
+  function execute!(X_list, initkT, iter, finalkT, config, J, N, mcsteps)
+      function f(kT, config0, J, mcsteps, N, i)
+          mag, mag_sq = metropolis(config0, kT, J, mcsteps, N)
+          X = get_susceptibility(mag, mag_sq, kT, N, mcsteps)
+          return (i, X)
+      end
+
+      tasks = [Threads.@spawn f(kT, config, J, mcsteps, N, i) for (i, kT) in enumerate(initkT:iter:finalkT)]
+
+      for (i, t) in enumerate(tasks)
+          i, X = fetch(t)
+          X_list[i] = X
+      end
+      return nothing
   end
-end
 
 
 function main()
