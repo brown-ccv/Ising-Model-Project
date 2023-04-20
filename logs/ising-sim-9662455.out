@@ -1,0 +1,12 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 9662455
+##  Job Name : ising-sim
+##  Nodelist : node1731
+##      CPUs : 4
+##  Mem/Node : 8192 MB
+## Directory : /gpfs/home/pstey/projects/Ising-Model-Project
+##   Job Started : Thu Apr 20 13:49:09 EDT 2023
+###############################################################################
+module: unloading 'julia/1.8.5'
+module: loading 'julia/1.8.5'
+slurmstepd: error: *** JOB 9662455 ON node1731 CANCELLED AT 2023-04-20T13:50:19 DUE TO TIME LIMIT ***

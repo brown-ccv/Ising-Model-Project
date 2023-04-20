@@ -1,0 +1,21 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 9662381
+##  Job Name : ising-sim
+##  Nodelist : node1336
+##      CPUs : 24
+##  Mem/Node : 49152 MB
+## Directory : /gpfs/home/pstey/projects/Ising-Model-Project
+##   Job Started : Thu Apr 20 13:27:08 EDT 2023
+###############################################################################
+module: unloading 'julia/1.8.5'
+module: loading 'julia/1.8.5'
+ERROR: LoadError: ArgumentError: Package DataStructures not found in current path.
+- Run `import Pkg; Pkg.add("DataStructures")` to install the DataStructures package.
+Stacktrace:
+ [1] macro expansion
+   @ ./loading.jl:1163 [inlined]
+ [2] macro expansion
+   @ ./lock.jl:223 [inlined]
+ [3] require(into::Module, mod::Symbol)
+   @ Base ./loading.jl:1144
+in expression starting at /gpfs/home/pstey/projects/Ising-Model-Project/zerofield_susceptibility.jl:1

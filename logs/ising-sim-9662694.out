@@ -1,0 +1,15 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 9662694
+##  Job Name : ising-sim
+##  Nodelist : node1923
+##      CPUs : 48
+##  Mem/Node : 61440 MB
+## Directory : /gpfs/home/pstey/projects/Ising-Model-Project
+##   Job Started : Thu Apr 20 14:36:10 EDT 2023
+###############################################################################
+module: unloading 'julia/1.8.5'
+module: loading 'julia/1.8.5'
+N: 200
+50
+1013.087508 seconds (167.76 k allocations: 8.899 MiB, 0.01% compilation time)
+Done!
