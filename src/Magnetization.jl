@@ -9,98 +9,147 @@ using Random
 using Distributions
 
 
-
-
 #takes in an integer n
 #returns array of length n of integers +/- 1 (randomly chosen) that represent spins
 function initial_config(n::Int)
-  config = zeros(n)
-  if n%2 != 0
-    println("Size n must be even.")
-    return
-  else
-    for i=1:n
-      config[i] = rand([-1, 1])
-    end
-  end
-  return config
+  return rand([-1, 1], n)
 end
 
+function gaussian_rf(N)
+  nd = Normal(0, 1)
+  return rand(nd, N)
+end
 
 function get_energy(s::AbstractArray, h::AbstractArray, J)
   E1 = 0.0
   E2 = 0.0
-  for i=1:length(s)
-    for j=i:length(s)
-      if j != i
-        E1 += J*(s[i]-s[j])^2/(i-j)^2
-      end
+  for i=1:length(s)-1
+    for j=i+1:length(s)
+      E1 += (s[i]-s[j])^2/(i-j)^2
     end
     E2 += h[i]*s[i]
   end
-  E = E1-E2
+  E2 += last(h)*last(s)
+  E = J*E1/2 - E2
   return E
 end
 
 
-
-function get_magnetization(config::AbstractArray)
+function get_magnetization(config)
   m = sum(config)
-  mag_per_spin = m/length(config)
+  mag_per_spin = m/N
   return mag_per_spin
 end
 
+function get_avg_mag(m_acc, n_steps)
+  return m_acc/n_steps
+end
 
-#DO I NEED MAGNETIC FIELD PARAMETER??? ASK IN MEETING
-function mcm_mag(config_initial::AbstractArray, kT, J, h, steps)
-  config = copy(config_initial)
+function do_MC_Step(config, kT, J, h)
   N = length(config)
-  m = get_magnetization(config)
-  states = 1
   E = get_energy(config, h, J)
-  mags = Vector{Float64}()
-  push!(mags, m)
-  for i=1:steps
+  for i=1:N
     site = rand(1:N)
     config[site] = -1*config[site]
+    #attempt to update one site of the configuration
     E_new = get_energy(config, h, J)
+    #look at the hamiltonian of the configuration
+    #given this updated site
     dE = E_new - E
+    #look at the difference between old and new hamiltonian
     prob = exp(-dE/(kT))
+    #Metropolis acceptance ratio
     r = rand(Float64)
-      if min(1, prob) > r
-        E = E_new
-        m = get_magnetization(config)
-        push!(mags, m)
-        states += 1
-      else
-        config[site] = -1*config[site]
-      end
+
+    if min(1, prob) > r
+     #if true, configuration is "updated"
+      #accepted_states += 1
+      E += dE
+    else
+      config[site] = -1*config[site]
+      #if false, then configuration stays the same
     end
-    return states, mags
   end
+  M = get_magnetization(config)
+  #M_acc += abs(M)
+  #M_acc += M
+  #we get the magnization per spin of the updated system
+  return M
+end
 
 
-N = 1000
-kT = 5.0
-J = 1.0 #make 1
-h = zeros(N)
-steps = 50000
-runs = 3
+function metropolis(config_initial::AbstractArray, kT, J, h, mcsteps)
+  config = copy(config_initial)
+  #starts out with a configuration of randomized N spin array
+  M = 0
+  # hamiltonian of a particular configuration
+  #for i=1:mcsteps/2
+    #For MCMC an arbitrary number steps are executed for precision
+    #do_MC_Step(config, kT, J, h)
+    #println("MC step ", i, " at ", kT, " kT.")
+  #end
+  M_acc = 0
+  Msq_acc = 0
+  for i=1:mcsteps
+    M = do_MC_Step(config, kT, J, h)
+    M_acc += M
+    Msq_acc += M^2
+  end
+  return M_acc, Msq_acc
+end
+
+
+#CONSTANTS:
+
+#Number of spins in initialized configuration
+N = 60
+
+#Interaction constant
+J = 1.0
+
+#Initialize number of montecarlo steps
+mcsteps = 100000
+
+#number of simulations
+num_simulations = 1
 
 config0 = initial_config(N)
-mags_list = Vector{Vector{Float64}}()
-states_list = Vector{Int64}()
 
-for i=1:runs
-  data = mcm_mag(config0, kT, J, h, steps)
-  push!(states_list, data[1])
-  push!(mags_list, data[2])
-end
-println()
-#println("states visited: ", states)
-#println("magnetization of final state: ", last(mags))
+#Initialize random field(s)
+h0 = zeros(N)
+h1 = 0.1*ones(N)
 
-plot()
-for i=1:runs
-  display(plot!(1:states_list[i], mags_list[i], label = "Run " * string(i)))
+initkT = 0.05
+iter = 0.05
+finalkT = 3.0
+
+num_points = Int((finalkT - initkT)/iter + 1)
+
+# Equilibriate system with Monte Carlo,
+# and calculate (absolute value of) avg magnetization
+
+acc_M_list = zeros(num_points)
+#acc_Msq_list = zeros(num_points)
+
+for i=1:num_simulations
+  M_list = Vector{Float64}()
+  #Msq_list = Vector{Float64}()
+  hg = gaussian_rf(N)
+  for kT = initkT:iter:finalkT
+    m_acc, msq_acc = metropolis(config0, kT, J, hg, mcsteps)
+    avg_mag = get_avg_mag(abs(m_acc), mcsteps)
+    #avgsq_mag = get_avg_mag(msq_acc, mcsteps)
+    push!(M_list, avg_mag)
+    #push!(Msq_list, avgsq_mag)
+    #println("At ", kT, " kT.")
+  end
+  global acc_M_list += M_list
+  #global acc_Msq_list += Msq_list
+  println("Run ", i, " completed")
 end
+
+avg_M_list = acc_M_list/num_simulations
+#avg_Msq_list = acc_Msq_list/num_simulations
+
+plot(initkT:iter:finalkT, avg_M_list, xlabel = "Temperature (kT)", ylabel = "Magnetization", linewidth = 2.5, label = "M, Gaussian RF")
+#plot!(initkT:iter:finalkT, avg_Msq_list, xlabel = "Temperature (kT)", ylabel = "Magnetization", linewidth = 2.5, label = "M^2, Gaussian RF")
