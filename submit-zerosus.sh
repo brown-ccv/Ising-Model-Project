@@ -3,7 +3,7 @@
 # Request an hour of runtime:
 #SBATCH --time=3:00:00
 #SBATCH --nodes=1
-#SBATCH -c 48
+#SBATCH -c 24
 #SBATCH --exclusive
 #SBATCH --partition=batch
 #SBATCH --mem=20G
@@ -12,7 +12,6 @@
 #SBATCH --error logs/threaded/ising-sim-%A-%a.out
 #SBATCH --constraint cascade
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=cpaniaguam@brown.edu
 
 module load julia/1.8.5
 

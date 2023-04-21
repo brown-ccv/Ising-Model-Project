@@ -92,11 +92,10 @@ function metropolis(config_initial::Vector{Int64}, kT, J, mcsteps::Int, N)
   return mag_acc, sq_mag_acc
 end
 
-
 function execute(kT, config, J, N, mcsteps)
   mag, mag_sq = metropolis(config, kT, J, mcsteps, N)
   X = get_susceptibility(mag, mag_sq, kT, N, mcsteps)
-  return X
+  return (X = X, mag = mag)
 end
 
 function main()
@@ -121,13 +120,13 @@ function main()
   #Initialize configuration
   config0 = random_unit_config(N, 1, seed)
 
-  @time  X = execute(kT, config0, J, N, mcsteps)
-  println(X)
+  @time  data = execute(kT, config0, J, N, mcsteps)
+  #println(X)
   #write X to a txt file
   path = joinpath(@__DIR__, "data", "data-$N-$kT.txt")
-  println(path)
+  #println(path)
   mkpath(dirname(path))
-  serialize(path, X)
+  serialize(path, data)
   #open(path, "w") do io
   #  write(io, X)
   #end
